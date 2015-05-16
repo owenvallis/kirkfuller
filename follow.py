@@ -23,22 +23,24 @@ followed = 0
 # create db
 db = sqlite3.connect('data/MyDB.db')
 
-with db:
-    cursor = db.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS follower_db(id INTEGER PRIMARY KEY, create_date TEXT)")
-    db.commit()
+cursor = db.cursor()
+cursor.execute("CREATE TABLE IF NOT EXISTS follower_db(id INTEGER PRIMARY KEY, create_date TEXT)")
+cursor.execute("CREATE TABLE IF NOT EXISTS follower_page_db(screen_name TEXT PRIMARY KEY, page INTEGER)")
+db.commit()
 
-    for user_id in tweepy.Cursor(api.followers_ids, screen_name=user_screen_name).items():
-        if followed == max_follow:
-            print "All done for today. Kirk Fuller, over and out"
-            exit()
+for user_id in tweepy.Cursor(api.followers_ids, screen_name=user_screen_name).items():
+    if followed == max_follow:
+        print "All done for today. Kirk Fuller, over and out"
+        exit()
+    else:
+        cursor.execute("SELECT * FROM follower_db WHERE id=?", (user_id,))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO follower_db VALUES (?, DATE('now'))", (user_id,))
+            api.get_user(user_id).follow()
+            followed += 1
+            print "followed %d new users" % followed
         else:
-            cursor.execute("SELECT * FROM follower_db WHERE id = ?", (user_id,))
-            user_id_row = cursor.fetchall()
-            if user_id_row is None:
-                cursor.execute("INSERT INTO follower_db VALUES (?, DATE('now'))", (user_id,))
-                api.get_user(user_id).follow()
-                followed += 1
-                print "followed %d new users" % followed
-            else:
-                print "user id %d exists in followers_db" % user_id
+            print "user id %d exists in followers_db" % user_id
+
+db.commit()
+db.close()
