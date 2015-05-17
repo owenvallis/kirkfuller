@@ -48,14 +48,18 @@ while followed < max_follow:
     cursor.execute("SELECT id FROM follower_ids_db WHERE screen_name=?", (screen_name,))
     user_id = cursor.fetchone()
     if user_id is None:
+        print "fetching the next page of user to follow from %s" % screen_name
         cursor.execute("UPDATE follower_page_db SET page=page+1 WHERE screen_name=?", (screen_name,))
         page = cursor.execute("SELECT page FROM follower_page_db WHERE screen_name=?", (screen_name,))
 
         ids = api.followers_ids(screen_name=screen_name, page=page)
         for user_id in ids:
+            print "adding user %d to the list of pottential followers for %s" % (user_id, screen_name)
             cursor.execute("INSERT INTO follower_ids_db VALUES (?, ?)", (screen_name, user_id))
         continue
 
+    user_id = user_id[0]
+    print "removing %d from the list of potential followers for %s" % (user_id, screen_name)
     cursor.execute("DELETE FROM follower_ids_db WHERE id=?", (user_id,))
 
     cursor.execute("SELECT * FROM followed_db WHERE id=?", (user_id,))
@@ -63,7 +67,7 @@ while followed < max_follow:
         cursor.execute("INSERT INTO followed_db VALUES (?, DATE('now'))", (user_id,))
         api.get_user(user_id).follow()
         followed += 1
-        print "followed %d new users" % followed
+        print "followed %d. Now following %d new users today" % (user_id, followed)
     else:
         print "user id %d exists in followers_db" % user_id
 
