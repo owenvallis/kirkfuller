@@ -2,6 +2,7 @@
 import sys
 import sqlite3
 import tweepy
+from datetime import datetime
 from keys import keys
 
 SCREEN_NAME = keys["screen_name"]
@@ -19,6 +20,10 @@ api = tweepy.API(auth,
 if (not api):
     print "Can't Authenticate"
     sys.exit(-1)
+
+# grab our datetime objects for tweet created_at compare
+d = datetime.now()
+last_year = d.replace(year = d.year -1)
 
 # follow new users
 screen_name = raw_input("enter user screen name: ")
@@ -65,9 +70,14 @@ while followed < max_follow:
     cursor.execute("SELECT * FROM followed_db WHERE id=?", (user_id,))
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO followed_db VALUES (?, DATE('now'))", (user_id,))
-        api.get_user(user_id).follow()
-        followed += 1
-        print "followed %d. Now following %d new users today" % (user_id, followed)
+        tweets = api.user_timeline(user_id=user_id, count=1)
+        if len(tweets) > 0:
+            if tweets[0].created_at > last_year:
+                api.get_user(user_id).follow()
+                followed += 1
+                print "followed %d. Now following %d new users today" % (user_id, followed)
+            else:
+                print "Not following %d. They are a non-active user." % user_id
     else:
         print "user id %d exists in followers_db" % user_id
 
