@@ -1,5 +1,7 @@
 # let's not add our private keys here
 keys.py
+# ignore our sql database
+*.db
 
 .DS_Store
 .AppleDouble
