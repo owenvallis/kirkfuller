@@ -70,14 +70,17 @@ while followed < max_follow:
     cursor.execute("SELECT * FROM followed_db WHERE id=?", (user_id,))
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO followed_db VALUES (?, DATE('now'))", (user_id,))
-        tweets = api.user_timeline(user_id=user_id, count=1)
-        if len(tweets) > 0:
-            if tweets[0].created_at > last_year:
-                api.get_user(user_id).follow()
-                followed += 1
-                print "followed %d. Now following %d new users today" % (user_id, followed)
-            else:
-                print "Not following %d. They are a non-active user." % user_id
+        try:
+            tweets = api.user_timeline(user_id=user_id, count=1)
+            if len(tweets) > 0:
+                if tweets[0].created_at > last_year:
+                    api.get_user(user_id).follow()
+                    followed += 1
+                    print "followed %d. Now following %d new users today" % (user_id, followed)
+                else:
+                    print "Not following %d. They are a non-active user." % user_id
+        except:
+            print "user %d has a private timeline" % user_id
     else:
         print "user id %d exists in followers_db" % user_id
 
