@@ -58,12 +58,16 @@ while followed < max_follow:
         cursor.execute("UPDATE follower_page_db SET page=page+1 WHERE screen_name=?", (screen_name,))
         page = cursor.execute("SELECT page FROM follower_page_db WHERE screen_name=?", (screen_name,))
 
-        ids = api.followers_ids(screen_name=screen_name, page=page)
-        for user_id in ids:
-            print "adding user %d to the list of pottential followers for %s" % (user_id, screen_name)
-            cursor.execute("INSERT INTO follower_ids_db VALUES (?, ?)", (screen_name, user_id))
-        db.commit
-        continue
+        try:
+            ids = api.followers_ids(screen_name=screen_name, page=page)
+            for user_id in ids:
+                print "adding user %d to the list of pottential followers for %s" % (user_id, screen_name)
+                cursor.execute("INSERT INTO follower_ids_db VALUES (?, ?)", (screen_name, user_id))
+            db.commit
+            continue
+        except:
+            print "The screen name, or page doesn't seem to exist"
+            sys.exit(-1)
 
     user_id = user_id[0]
     print "removing %d from the list of potential followers for %s" % (user_id, screen_name)
@@ -77,9 +81,12 @@ while followed < max_follow:
             tweets = api.user_timeline(user_id=user_id, count=1)
             if len(tweets) > 0:
                 if tweets[0].created_at > last_year:
-                    api.get_user(user_id).follow()
-                    followed += 1
-                    print "followed %d. Now following %d new users today" % (user_id, followed)
+                    try:
+                        api.get_user(user_id).follow()
+                        followed += 1
+                        print "followed %d. Now following %d new users today" % (user_id, followed)
+                    except:
+                        print "skipping user %d. There was an error when we tried to follow." % user_id
                 else:
                     print "Not following %d. They are a non-active user." % user_id
         except:
