@@ -47,6 +47,7 @@ cursor.execute("SELECT * FROM follower_page_db WHERE screen_name=?", (screen_nam
 if cursor.fetchone() is None:
     # if this the first time we've seen this user, then create a new entry
     cursor.execute("INSERT INTO follower_page_db VALUES (?, ?)", (screen_name, 0))
+    db.commit
 
 while followed < max_follow:
     # check to see if there are any followers left to consume from last time
@@ -61,6 +62,7 @@ while followed < max_follow:
         for user_id in ids:
             print "adding user %d to the list of pottential followers for %s" % (user_id, screen_name)
             cursor.execute("INSERT INTO follower_ids_db VALUES (?, ?)", (screen_name, user_id))
+        db.commit
         continue
 
     user_id = user_id[0]
@@ -70,6 +72,7 @@ while followed < max_follow:
     cursor.execute("SELECT * FROM followed_db WHERE id=?", (user_id,))
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO followed_db VALUES (?, DATE('now'))", (user_id,))
+        db.commit
         try:
             tweets = api.user_timeline(user_id=user_id, count=1)
             if len(tweets) > 0:
